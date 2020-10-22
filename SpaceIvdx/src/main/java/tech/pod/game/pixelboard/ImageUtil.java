@@ -1,3 +1,5 @@
+package tech.pod.game.pixelboard;
+
 import java.awt.image.*;
 import java.io.*;
 import javax.imageio.*;

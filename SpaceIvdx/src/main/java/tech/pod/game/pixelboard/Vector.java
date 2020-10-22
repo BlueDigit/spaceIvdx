@@ -1,3 +1,5 @@
+package tech.pod.game.pixelboard;
+
 /**<b>Permet de stocker des valeur permettant un deplacement sur un plan</b>
  * @author alexandrecremieux
  */

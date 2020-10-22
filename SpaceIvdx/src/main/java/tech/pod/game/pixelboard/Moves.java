@@ -1,3 +1,5 @@
+package tech.pod.game.pixelboard;
+
 /**<b>Permet de creer une interface entre les objets mobiles du jeu</b>
  * @author alexandrecremieux
  */

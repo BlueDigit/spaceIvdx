@@ -1,11 +1,13 @@
+package tech.pod.game.pixelboard;
+
 /**<b>Missile d'un enemi tireur ou d'un vaisseau ami</b>
  * @author alexandrecremieux
  */
 
 public class Missile extends GameObject{
-	
+
 	private int gameId = 3;
-	
+
 	//Constructeur
 	/**<b>Reprend le constructeur de super</b>
 	 * <p>Couleur jaune par defaut</p>
@@ -21,16 +23,16 @@ public class Missile extends GameObject{
 		for (int i = 0; i < temp.length; i++){
 			temp[i] = ImageUtil.computePixel(255, 255, 255, 0);
 		}
-		this.img = new Image(wid, hig, temp);
+		this.img = new Color(wid, hig, temp);
 		this.gameId = GameObject.initObjectGameId("Missile");
 	}
-	
+
 	//Accessor
-	
+
 	public int getGameId(){
 		return this.gameId;
 	}
-	
+
 	//Static method
 	public void move(Vector vector){
 		this.rec.y += vector.y;
