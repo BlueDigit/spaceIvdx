@@ -3,12 +3,16 @@ package tech.pod.game.generics.engine;
 import java.util.Objects;
 import tech.pod.game.generics.controller.GameController;
 
+/**
+ * TODO: the controller should have no state about coming instructions.
+ * TODO: the game flow should entirely be controller by the engine.
+ */
 public abstract class GameEngine
 {
-    protected final GameController<?, ?> controller;
+    protected final GameController<?, ?, ?> controller;
     protected EngineConfiguration configuration;
 
-    public GameEngine(EngineConfiguration configuration, GameController<?, ?> controller) {
+    public GameEngine(EngineConfiguration configuration, GameController<?, ?, ?> controller) {
         this.configuration = Objects.requireNonNull(configuration, "GameEngine: configuration");
         this.controller = Objects.requireNonNull(controller, "GameEngine: null controller");
     }
@@ -16,7 +20,6 @@ public abstract class GameEngine
     public void run() {
         while(!this.controller.ended()) {
             this.controller
-                    .readActions()
                     .executeActions()
                     .computeCollisions()
                     .updateStates()

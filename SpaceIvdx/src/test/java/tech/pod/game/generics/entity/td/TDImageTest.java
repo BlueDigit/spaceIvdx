@@ -1,4 +1,4 @@
-package tech.pod.game.generics.entity;
+package tech.pod.game.generics.entity.td;
 
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
