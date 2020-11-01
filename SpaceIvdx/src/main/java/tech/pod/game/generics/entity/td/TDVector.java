@@ -20,7 +20,7 @@ public class TDVector implements Vector<TDPosition, TDMaterial>
                                       material.upperLeft.y + this.y);
         var lowerRight = TDPosition.of(material.lowerRight.x + this.x,
                                        material.lowerRight.y + this.y);
-        return TDMaterial.of(upperLeft, lowerRight);
+        return material.setUpperLeft(upperLeft).setLowerRight(lowerRight);
     }
 
     public static TDVector of(int x, int y)

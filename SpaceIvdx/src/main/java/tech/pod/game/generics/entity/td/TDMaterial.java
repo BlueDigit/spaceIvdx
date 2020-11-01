@@ -67,10 +67,7 @@ public class TDMaterial implements Material<TDPosition, TDMaterial>
     @Override
     public synchronized TDMaterial translate(Vector<TDPosition, TDMaterial> vector)
     {
-        var translation = vector.apply(this);
-        this.upperLeft = translation.upperLeft;
-        this.lowerRight = translation.lowerRight;
-        return this;
+        return vector.apply(this);
     }
 
     @Override
