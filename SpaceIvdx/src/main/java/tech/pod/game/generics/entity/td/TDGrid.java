@@ -15,6 +15,22 @@ import tech.pod.game.generics.entity.core.Grid;
 import tech.pod.game.generics.entity.core.Material;
 import tech.pod.game.generics.entity.core.Vector;
 
+/**
+ * Represent a {@link Grid} composed by {@link TDMaterial} objects localized by {@link TDPosition}
+ *
+ * This grid offers a double localization system based on two maps:
+ * <ul>
+ *     <li>
+ *         One is based on the positions. The area is divided by cells. The cell have a standard size
+ *         defined by the user.
+ *     </li>
+ *     <li>
+ *         The other map is based on type. Each materials is indexed by its class.
+ *     </li>
+ * </ul>
+ * In all cases the materials are held by a {@link TreeSet} in order to offer a sorted structure
+ * to the calling code and ease computations.
+ */
 public class TDGrid implements Grid<TDPosition, TDMaterial>
 {
     private final int width;
@@ -39,6 +55,9 @@ public class TDGrid implements Grid<TDPosition, TDMaterial>
         this.area = TDMaterial.of(TDPosition.of(0, 0), TDPosition.of(this.width, this.height));
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean contains(Material<TDPosition, TDMaterial> material)
     {
@@ -47,19 +66,21 @@ public class TDGrid implements Grid<TDPosition, TDMaterial>
         return set.contains(material);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public TDGrid add(Material<TDPosition, TDMaterial> material)
     {
         Objects.requireNonNull(material, "TDGrid: Cannot add null material");
         if (this.isInCollision(material.get()) && !this.contains(material)) {
             synchronized (this.mapByPosition) {
-                final var positionSet = new TreeSet<TDPosition>();
                 material.computePositions()
                         .stream()
                         .map(this.getHashFunctionByPosition())
                         .filter(Optional::isPresent)
                         .map(Optional::get)
-                        .filter(positionSet::add)
+                        .distinct()
                         .forEach(position -> this.mapByPosition.computeIfAbsent(position, p -> new TreeSet<>())
                                                                .add(material.get())
                         );
@@ -71,19 +92,22 @@ public class TDGrid implements Grid<TDPosition, TDMaterial>
         return this;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public TDGrid remove(Material<TDPosition, TDMaterial> material)
     {
         Objects.requireNonNull(material, "TDGrid: Cannot remove null material");
         if (this.contains(material)) {
             synchronized (this.mapByPosition) {
-                var emptyTreeSet = new TreeSet<Material<TDPosition, TDMaterial>>();
-                material.computePositions()
+                var cellsPositions = material.computePositions()
                         .stream()
                         .map(this.getHashFunctionByPosition())
                         .filter(Optional::isPresent)
                         .map(Optional::get)
-                        .forEach(position -> this.mapByPosition.getOrDefault(position, emptyTreeSet).remove(material));
+                        .collect(Collectors.toList());
+                cellsPositions.forEach(p -> this.mapByPosition.get(p).remove(material));
                 this.mapByClass
                         .get(material.getClass())
                         .remove(material);
@@ -92,6 +116,9 @@ public class TDGrid implements Grid<TDPosition, TDMaterial>
         return this;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public List<Material<TDPosition, TDMaterial>> get(TDPosition position)
     {
@@ -103,17 +130,21 @@ public class TDGrid implements Grid<TDPosition, TDMaterial>
                    .collect(Collectors.toList());
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public TreeSet<Material<TDPosition, TDMaterial>> getFromCell(TDPosition position)
     {
         return this.getHashFunctionByPosition()
-                                   .apply(position)
-                                   .map(p -> this.mapByPosition.getOrDefault(p, new TreeSet<>()))
-                                   .orElseGet(TreeSet::new);
+                   .apply(position)
+                   .flatMap(p -> Optional.ofNullable(this.mapByPosition.get(p)))
+                   .map(TreeSet::new)
+                   .orElseGet(TreeSet::new);
     }
 
     @Override
-    public Material<TDPosition, TDMaterial>
+    public TDGrid
     translate(TDPosition position, Vector<TDPosition, TDMaterial> vector)
     {
         Objects.requireNonNull(position, "TDGrid: null position");
@@ -128,21 +159,26 @@ public class TDGrid implements Grid<TDPosition, TDMaterial>
         return this;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
-    public <O extends Material<TDPosition, TDMaterial>>
-    Material<TDPosition, TDMaterial> translate(Class<O> jazz, Vector<TDPosition, TDMaterial> vector)
+    @SuppressWarnings("unchecked")
+    public <O extends Material<TDPosition, TDMaterial>> Material<TDPosition, TDMaterial>
+    translate(Class<O> jazz, Vector<TDPosition, TDMaterial> vector)
     {
-        synchronized (this.mapByPosition) {
-            this.mapByClass
-                    .getOrDefault(jazz, new TreeSet<>())
-                    .forEach(m -> {
-                        this.remove(m);
-                        this.add(m.translate(vector));
-                    });
+        synchronized (this.mapByClass) {
+            var materials = this.mapByClass.replace((Class<? extends TDMaterial>)jazz, new TreeSet<>());
+            if (materials != null) {
+                materials.forEach(m -> this.add(m.translate(vector)));
+            }
         }
         return this;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     @SuppressWarnings("unchecked")
     public <O extends Material<TDPosition, TDMaterial>> TreeSet<O> getFromCell(Class<O> jazz)
@@ -150,24 +186,35 @@ public class TDGrid implements Grid<TDPosition, TDMaterial>
         return (TreeSet<O>) this.mapByClass.getOrDefault(jazz, new TreeSet<>());
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Stream<Material<TDPosition, TDMaterial>> stream()
     {
         return this.mapByPosition.values()
                                  .stream()
                                  .flatMap(Set::stream)
+                                 .distinct()
                                  .sorted();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Stream<Material<TDPosition, TDMaterial>> stream(Comparator<Material<TDPosition, TDMaterial>> comparator)
     {
         return this.mapByPosition.values()
                                  .stream()
                                  .flatMap(Set::stream)
+                                 .distinct()
                                  .sorted(comparator);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Function<TDPosition, Optional<TDPosition>> getHashFunctionByPosition()
     {
@@ -176,40 +223,51 @@ public class TDGrid implements Grid<TDPosition, TDMaterial>
                 .map(p -> TDPosition.of(p.x / this.cellWidth, p.y / this.cellHeight));
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Function<TDMaterial, List<TDPosition>> getHashFunctionByMaterial()
     {
-        final var positionSet = new TreeSet<TDPosition>();
         return material -> material.computePositions()
                                    .stream()
                                    .map(position -> this.getHashFunctionByPosition().apply(position))
                                    .filter(Optional::isPresent)
                                    .map(Optional::get)
-                                   .filter(positionSet::add)
+                                   .distinct()
                                    .collect(Collectors.toList());
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean isInCollision(Material<TDPosition, TDMaterial> other)
     {
         return this.area.isInCollision(other);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public TDGrid spawn()
     {
-        var grid = TDGrid.of(this.height, this.cellHeight, this.width, this.cellWidth);
+        var spawn = TDGrid.of(this.height, this.cellHeight, this.width, this.cellWidth);
         this.mapByPosition
                 .values()
                 .stream()
                 .flatMap(Set::stream)
                 .map(Material::spawn)
-                .forEach(grid::add);
-        return grid;
+                .forEach(spawn::add);
+        return spawn;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
-    public Material<TDPosition, TDMaterial> translate(Vector<TDPosition, TDMaterial> vector)
+    public TDGrid translate(Vector<TDPosition, TDMaterial> vector)
     {
         Objects.requireNonNull(vector, "TDGrid: null vector");
         synchronized (this.mapByPosition) {
@@ -218,14 +276,28 @@ public class TDGrid implements Grid<TDPosition, TDMaterial>
                     .values()
                     .stream()
                     .flatMap(Set::stream)
+                    .distinct()
                     .forEach(material -> {
-                        material.computePositions()
-                                .forEach(position -> this.mapByPosition.get(position).remove(material));
-                        material.translate(vector)
-                                .computePositions()
-                                .forEach(position -> this.mapByPosition
-                                        .computeIfAbsent(position, k -> new TreeSet<>())
-                                        .add(material)
+                        material
+                            .computePositions()
+                            .stream()
+                            .map(p -> this.getHashFunctionByPosition().apply(p))
+                            .filter(Optional::isPresent)
+                            .map(Optional::get)
+                            .distinct()
+                            .forEach(position -> this.mapByPosition.get(position).remove(material));
+
+                        material
+                            .translate(vector)
+                            .computePositions()
+                            .stream()
+                            .map(p -> this.getHashFunctionByPosition().apply(p))
+                            .filter(Optional::isPresent)
+                            .map(Optional::get)
+                            .distinct()
+                            .forEach(position -> this.mapByPosition
+                                    .computeIfAbsent(position, k -> new TreeSet<>())
+                                    .add(material)
                                 );
                     });
         }

@@ -5,8 +5,8 @@ import tech.pod.game.generics.entity.core.Position;
 
 public class TDPosition implements Position, Comparable<TDPosition>
 {
-    final int x;
-    final int y;
+    public final int x;
+    public final int y;
 
     private TDPosition(int x, int y) {
         this.x = x;

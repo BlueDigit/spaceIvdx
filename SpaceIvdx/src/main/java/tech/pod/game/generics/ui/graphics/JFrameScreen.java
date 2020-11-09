@@ -101,10 +101,13 @@ public class JFrameScreen<C extends Color> extends JFrame implements GameScreen<
         return this;
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public GameScreen<C> draw() {
         if (this.panel == null) {
             this.configure(this.configuration, this.backGround);
-            return this;
         }
         return this.draw(this.backGround);
     }
@@ -115,7 +118,7 @@ public class JFrameScreen<C extends Color> extends JFrame implements GameScreen<
     @Override
     public GameScreen<C> draw(GameImage<C> image) {
         if (this.panel == null) {
-            throw new IllegalStateException("JFrameScreen: the panel is null");
+            this.configure(this.configuration, this.backGround);
         }
         this.copyPixels(image);
         this.panel.revalidate();

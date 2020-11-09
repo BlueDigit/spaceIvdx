@@ -1,4 +1,4 @@
-package tech.pod.game.generics.controller;
+package tech.pod.game.generics.controller.core;
 
 @FunctionalInterface
 public interface GameEvent

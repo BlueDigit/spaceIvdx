@@ -1,7 +1,7 @@
 package tech.pod.game.generics.engine;
 
 import java.util.Objects;
-import tech.pod.game.generics.controller.GameController;
+import tech.pod.game.generics.controller.core.GameController;
 
 /**
  * TODO: the controller should have no state about coming instructions.
@@ -21,7 +21,6 @@ public abstract class GameEngine
         while(!this.controller.ended()) {
             this.controller
                     .executeActions()
-                    .computeCollisions()
                     .updateStates()
                     .updateUI();
         }

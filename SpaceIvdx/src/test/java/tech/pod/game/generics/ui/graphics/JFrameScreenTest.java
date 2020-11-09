@@ -11,7 +11,7 @@ class JFrameScreenTest
 {
     @Test
     @Disabled
-    @DisplayName("Drawing an image should work")
+    @DisplayName("Drawing an image should work - this test should stay disabled when packaging")
     void drawingAnImageShouldWork() throws Exception
     {
         var blueBackGround = new RGBAColor("Blue", 255, 0, 0, 255);

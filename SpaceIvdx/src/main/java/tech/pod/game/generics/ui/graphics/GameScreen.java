@@ -22,6 +22,10 @@ public interface GameScreen<C extends Color>
      */
     GameScreen<C> spool();
 
+    /**
+     * Show the resulting image
+     * @return this
+     */
     GameScreen<C> draw();
 
     /**

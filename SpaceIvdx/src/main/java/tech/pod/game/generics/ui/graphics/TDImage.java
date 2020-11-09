@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 /**
  * Two dimensional image representation.
@@ -70,7 +71,9 @@ public abstract class TDImage<C extends Color> implements GameImage<C>
      * @return This
      */
     public TDImage<C> setColor(int i, C color) {
-        this.matrix.set(i, color);
+        if (i < this.matrix.size()) {
+            this.matrix.set(i, color);
+        }
         return this;
     }
 
@@ -85,11 +88,17 @@ public abstract class TDImage<C extends Color> implements GameImage<C>
     }
 
     public TDImage<C> setColor(int x, int y, C color) {
-        int idx = TDImage.computeIndex(x, y, this.width);
-        return this.setColor(idx, color);
+        if (x < this.width && x < this.height) {
+            int idx = TDImage.computeIndex(x, y, this.width);
+            return this.setColor(idx, color);
+        }
+        return this;
     }
 
     public C getColor(int x, int y) {
+        if (x >= this.width || y >= this.height) {
+            throw new IndexOutOfBoundsException();
+        }
         int idx = TDImage.computeIndex(x, y, this.width);
         return this.getColor(idx);
     }
@@ -103,5 +112,18 @@ public abstract class TDImage<C extends Color> implements GameImage<C>
             throw new IllegalArgumentException();
         }
         return y * width + x;
+    }
+
+    public static <C extends Color> TDImage<C> copy(TDImage<C> toCopy) {
+        var copy = new TDImage<>(toCopy.width, toCopy.height, toCopy.backgroundColor) {
+            @Override
+            public Stream<C> stream() {
+                return this.matrix.stream();
+            }
+        };
+        IntStream
+            .range(0, toCopy.size)
+            .forEach(i -> copy.setColor(i, toCopy.getColor(i)));
+        return copy;
     }
 }

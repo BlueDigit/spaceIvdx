@@ -14,6 +14,12 @@ import java.util.stream.Stream;
 public interface Grid<P extends Position, E extends Material<P, E>/*, G extends Grid<P, E, G>*/> extends Material<P, E>
 {
     /**
+     * {@inheritDoc}
+     */
+    @Override
+    Grid<P, E> spawn();
+
+    /**
      * Check if the grid contains a specific material
      * @param material Should not be null
      * @return True if the grid contains this material or false otherwise
@@ -74,7 +80,16 @@ public interface Grid<P extends Position, E extends Material<P, E>/*, G extends 
      */
     Stream<Material<P, E>> stream(Comparator<Material<P, E>> comparator);
 
+    /**
+     * Generate a function that compute the cell to which the position belongs.
+     * @return A function taking a position and returning the position of the cell containing that position if any
+     * @see Optional
+     */
     Function<P, Optional<P>> getHashFunctionByPosition();
 
+    /**
+     * Generate a function that compute the cell to which all the position of a material belongs.
+     * @return A function taking a material and returning the positions of the cells containing that material if any
+     */
     Function<E, List<P>> getHashFunctionByMaterial();
 }

@@ -9,9 +9,11 @@ import java.util.Objects;
  * from the {@link GameImage} logic. By using this interface then the GameImage hierarchy
  * could implements its own computation logic, regardless the graphics technology used
  * by the application.
+ *
  */
 public abstract class Color
 {
+    // TODO remove the color name
     private String name;
 
     public Color(String name) {
