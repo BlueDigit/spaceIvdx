@@ -1,7 +1,14 @@
-# SpaceIvdx
+# Multiboard
 
-SpaceIvdx is a toy project to test various software design ideas and
+Multiboard is a toy project to test various software design ideas and
 development approaches.
+
+The main concept is to provide a generic approach for two d. games. The
+engine is made for old-school style games and does not pretend to be more
+performant than that.
+
+For now, the project offer only one game: a Space Invader implementation
+named SpaceIvdx.
 
 ## Compile
 ### Requirements
