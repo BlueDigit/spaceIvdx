@@ -97,9 +97,8 @@ public class TDMaterial implements Material<TDPosition, TDMaterial>
     {
         return IntStream
                 .range(this.upperLeft.y, this.lowerRight.y)
-                .mapToObj(y -> IntStream
-                        .range(this.upperLeft.x, this.lowerRight.x)
-                        .mapToObj(x -> TDPosition.of(x, y))
+                .mapToObj(y -> IntStream.range(this.upperLeft.x, this.lowerRight.x)
+                                        .mapToObj(x -> TDPosition.of(x, y))
                 )
                 .flatMap(s -> s)
                 .collect(Collectors.toList());

@@ -1,5 +1,6 @@
 package tech.pod.game.generics.entity.td;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -33,12 +34,14 @@ import tech.pod.game.generics.entity.core.Vector;
  */
 public class TDGrid implements Grid<TDPosition, TDMaterial>
 {
-    private final int width;
-    private final int height;
-    private final int cellWidth;
-    private final int cellHeight;
+    public final int width;
+    public final int height;
+    public final int cellWidth;
+    public final int cellHeight;
+    public final Object lockObj = new Object();
     private final Map<TDPosition, TreeSet<Material<TDPosition, TDMaterial>>> mapByPosition = new HashMap<>();
-    private final Map<Class<? extends TDMaterial>, TreeSet<Material<TDPosition, TDMaterial>>> mapByClass = new HashMap<>();
+    private final Map<Class<? extends TDMaterial>, TreeSet<Material<TDPosition, TDMaterial>>> mapByClass =
+            new HashMap<>();
     private TDMaterial area;
 
     protected TDGrid(int height, int cellHeight, int width, int cellWidth)
@@ -62,8 +65,9 @@ public class TDGrid implements Grid<TDPosition, TDMaterial>
     public boolean contains(Material<TDPosition, TDMaterial> material)
     {
         Objects.requireNonNull(material, "TDGrid: Cannot remove null material");
-        var set = this.mapByClass.getOrDefault(material.getClass(), new TreeSet<>());
-        return set.contains(material);
+        //var position = this.getHashFunctionByPosition().apply(material.get().upperLeft);
+        return this.mapByClass.getOrDefault(material.getClass(), new TreeSet<>()).contains(material);
+                //|| (position.isPresent() && this.mapByPosition.getOrDefault(position.get(), new TreeSet<>()).contains(material));
     }
 
     /**
@@ -74,20 +78,18 @@ public class TDGrid implements Grid<TDPosition, TDMaterial>
     {
         Objects.requireNonNull(material, "TDGrid: Cannot add null material");
         if (this.isInCollision(material.get()) && !this.contains(material)) {
-            synchronized (this.mapByPosition) {
-                material.computePositions()
-                        .stream()
-                        .map(this.getHashFunctionByPosition())
-                        .filter(Optional::isPresent)
-                        .map(Optional::get)
-                        .distinct()
-                        .forEach(position -> this.mapByPosition.computeIfAbsent(position, p -> new TreeSet<>())
-                                                               .add(material.get())
-                        );
-                this.mapByClass
-                        .computeIfAbsent(material.get().getClass(), c -> new TreeSet<>())
-                        .add(material.get());
-            }
+            material.computePositions()
+                    .stream()
+                    .map(this.getHashFunctionByPosition())
+                    .distinct()
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
+                    .forEach(position -> this.mapByPosition.computeIfAbsent(position, p -> new TreeSet<>())
+                                                           .add(material.get())
+                    );
+            this.mapByClass
+                    .computeIfAbsent(material.get().getClass(), c -> new TreeSet<>())
+                    .add(material.get());
         }
         return this;
     }
@@ -100,18 +102,16 @@ public class TDGrid implements Grid<TDPosition, TDMaterial>
     {
         Objects.requireNonNull(material, "TDGrid: Cannot remove null material");
         if (this.contains(material)) {
-            synchronized (this.mapByPosition) {
-                var cellsPositions = material.computePositions()
-                        .stream()
-                        .map(this.getHashFunctionByPosition())
-                        .filter(Optional::isPresent)
-                        .map(Optional::get)
-                        .collect(Collectors.toList());
-                cellsPositions.forEach(p -> this.mapByPosition.get(p).remove(material));
-                this.mapByClass
-                        .get(material.getClass())
-                        .remove(material);
-            }
+            material.computePositions()
+                    .stream()
+                    .map(this.getHashFunctionByPosition())
+                    .distinct()
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
+                    .forEach(p -> this.mapByPosition.get(p).remove(material));
+            this.mapByClass
+                    .get(material.getClass())
+                    .remove(material);
         }
         return this;
     }
@@ -149,13 +149,11 @@ public class TDGrid implements Grid<TDPosition, TDMaterial>
     {
         Objects.requireNonNull(position, "TDGrid: null position");
         Objects.requireNonNull(vector, "TDGrid: null vector");
-        synchronized (this.mapByPosition) {
-            this.get(position)
-                .forEach(m -> {
-                    this.remove(m);
-                    this.add(m.translate(vector));
-                });
-        }
+        this.get(position)
+            .forEach(m -> {
+                this.remove(m);
+                this.add(m.translate(vector));
+            });
         return this;
     }
 
@@ -167,11 +165,10 @@ public class TDGrid implements Grid<TDPosition, TDMaterial>
     public <O extends Material<TDPosition, TDMaterial>> Material<TDPosition, TDMaterial>
     translate(Class<O> jazz, Vector<TDPosition, TDMaterial> vector)
     {
-        synchronized (this.mapByClass) {
-            var materials = this.mapByClass.replace((Class<? extends TDMaterial>)jazz, new TreeSet<>());
-            if (materials != null) {
-                materials.forEach(m -> this.add(m.translate(vector)));
-            }
+        var materials = new ArrayList<>(this.mapByClass.getOrDefault(jazz, new TreeSet<>()));
+        if (!materials.isEmpty()) {
+            materials.forEach(this::remove);
+            materials.forEach(m -> this.add(m.translate(vector)));
         }
         return this;
     }
@@ -183,7 +180,7 @@ public class TDGrid implements Grid<TDPosition, TDMaterial>
     @SuppressWarnings("unchecked")
     public <O extends Material<TDPosition, TDMaterial>> TreeSet<O> getFromCell(Class<O> jazz)
     {
-        return (TreeSet<O>) this.mapByClass.getOrDefault(jazz, new TreeSet<>());
+        return new TreeSet<>((TreeSet<O>) this.mapByClass.getOrDefault(jazz, new TreeSet<>()));
     }
 
     /**
@@ -192,7 +189,7 @@ public class TDGrid implements Grid<TDPosition, TDMaterial>
     @Override
     public Stream<Material<TDPosition, TDMaterial>> stream()
     {
-        return this.mapByPosition.values()
+        return this.mapByClass.values()
                                  .stream()
                                  .flatMap(Set::stream)
                                  .distinct()
@@ -205,10 +202,9 @@ public class TDGrid implements Grid<TDPosition, TDMaterial>
     @Override
     public Stream<Material<TDPosition, TDMaterial>> stream(Comparator<Material<TDPosition, TDMaterial>> comparator)
     {
-        return this.mapByPosition.values()
+        return this.mapByClass.values()
                                  .stream()
                                  .flatMap(Set::stream)
-                                 .distinct()
                                  .sorted(comparator);
     }
 
@@ -251,7 +247,7 @@ public class TDGrid implements Grid<TDPosition, TDMaterial>
      * {@inheritDoc}
      */
     @Override
-    public TDGrid spawn()
+    public synchronized TDGrid spawn()
     {
         var spawn = TDGrid.of(this.height, this.cellHeight, this.width, this.cellWidth);
         this.mapByPosition
@@ -270,50 +266,46 @@ public class TDGrid implements Grid<TDPosition, TDMaterial>
     public TDGrid translate(Vector<TDPosition, TDMaterial> vector)
     {
         Objects.requireNonNull(vector, "TDGrid: null vector");
-        synchronized (this.mapByPosition) {
-            this.area = this.area.translate(vector);
-            this.mapByClass
-                    .values()
-                    .stream()
-                    .flatMap(Set::stream)
-                    .distinct()
-                    .forEach(material -> {
-                        material
-                            .computePositions()
-                            .stream()
-                            .map(p -> this.getHashFunctionByPosition().apply(p))
-                            .filter(Optional::isPresent)
-                            .map(Optional::get)
-                            .distinct()
-                            .forEach(position -> this.mapByPosition.get(position).remove(material));
+        this.area = this.area.translate(vector);
+        this.mapByClass
+                .values()
+                .stream()
+                .flatMap(Set::stream)
+                .distinct()
+                .forEach(material -> {
+                    material
+                        .computePositions()
+                        .stream()
+                        .map(p -> this.getHashFunctionByPosition().apply(p))
+                        .filter(Optional::isPresent)
+                        .map(Optional::get)
+                        .distinct()
+                        .forEach(position -> this.mapByPosition.get(position).remove(material));
 
-                        material
-                            .translate(vector)
-                            .computePositions()
-                            .stream()
-                            .map(p -> this.getHashFunctionByPosition().apply(p))
-                            .filter(Optional::isPresent)
-                            .map(Optional::get)
-                            .distinct()
-                            .forEach(position -> this.mapByPosition
-                                    .computeIfAbsent(position, k -> new TreeSet<>())
-                                    .add(material)
-                                );
-                    });
-        }
+                    material
+                        .translate(vector)
+                        .computePositions()
+                        .stream()
+                        .map(p -> this.getHashFunctionByPosition().apply(p))
+                        .filter(Optional::isPresent)
+                        .map(Optional::get)
+                        .distinct()
+                        .forEach(position -> this.mapByPosition
+                                .computeIfAbsent(position, k -> new TreeSet<>())
+                                .add(material)
+                            );
+                });
         return this;
     }
 
     @Override
     public List<TDPosition> computePositions()
     {
-        synchronized (this.mapByPosition) {
-            return this.mapByPosition.keySet()
-                                     .stream()
-                                     .filter(k -> !this.mapByPosition.get(k).isEmpty())
-                                     .sorted()
-                                     .collect(Collectors.toList());
-        }
+        return this.mapByPosition.keySet()
+                                 .stream()
+                                 .filter(k -> !this.mapByPosition.get(k).isEmpty())
+                                 .sorted()
+                                 .collect(Collectors.toList());
     }
 
     @Override

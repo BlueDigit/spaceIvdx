@@ -9,4 +9,8 @@ public interface Material<P extends Position, E extends Material<P, E>> extends 
     Material<P, E> translate(Vector<P, E> vector);
     List<P> computePositions();
     E get();
+
+    default boolean visible() {
+        return true;
+    }
 }

@@ -1,7 +1,5 @@
 package tech.pod.game.generics.ui.graphics;
 
-import java.util.Objects;
-
 /**
  * Typing interface for the color hierarchy.
  *
@@ -11,16 +9,4 @@ import java.util.Objects;
  * by the application.
  *
  */
-public abstract class Color
-{
-    // TODO remove the color name
-    private String name;
-
-    public Color(String name) {
-        this.name = Objects.requireNonNull(name, "Color: null name");
-    }
-
-    public String toString() {
-        return this.name;
-    }
-}
+public abstract class Color {}

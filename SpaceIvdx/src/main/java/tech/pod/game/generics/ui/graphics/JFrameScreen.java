@@ -1,6 +1,7 @@
 package tech.pod.game.generics.ui.graphics;
 
 import java.awt.Graphics;
+import java.awt.event.WindowEvent;
 import java.awt.image.DataBufferInt;
 import java.util.AbstractMap;
 import java.util.Objects;
@@ -84,7 +85,8 @@ public class JFrameScreen<C extends Color> extends JFrame implements GameScreen<
         this.copyPixels(backGround);
         this.panel = ScreenPanel.of(bim);
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        this.setSize(configuration.getWidth(), configuration.getHeight());
+        // TODO: Search why the window does not fit the exact height
+        this.setSize(configuration.getWidth(), configuration.getHeight() + 37);
         this.add(this.panel);
         this.setVisible(true);
         return this;
@@ -123,6 +125,15 @@ public class JFrameScreen<C extends Color> extends JFrame implements GameScreen<
         this.copyPixels(image);
         this.panel.revalidate();
         this.panel.repaint();
+        return this;
+    }
+
+    @Override
+    public GameScreen<C> close()
+    {
+        if (this.panel != null) {
+            this.dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
+        }
         return this;
     }
 

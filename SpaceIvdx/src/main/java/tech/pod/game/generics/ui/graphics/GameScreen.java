@@ -34,4 +34,10 @@ public interface GameScreen<C extends Color>
      * @return this
      */
     GameScreen<C> draw(GameImage<C> image);
+
+    /**
+     * Close the screen
+     * @return this
+     */
+    GameScreen<C> close();
 }

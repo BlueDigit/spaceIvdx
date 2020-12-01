@@ -10,8 +10,7 @@ public class RGBAColor extends Color
     private int blue;
     private int gold;
 
-    public RGBAColor(String name, int alpha, int red, int gold, int blue) {
-        super(name);
+    public RGBAColor(int alpha, int red, int gold, int blue) {
         this.alpha = RGBAColor.checkValue("alpha", alpha);
         this.red = RGBAColor.checkValue("red", red);
         this.blue = RGBAColor.checkValue("blue", blue);
@@ -36,6 +35,23 @@ public class RGBAColor extends Color
 
     public int toPixel() {
         return (this.alpha << 24) + (this.red << 16) + (this.gold << 8) + this.blue;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (!(object instanceof RGBAColor other)) {
+            return false;
+        }
+        return other.alpha == this.alpha
+               && other.red == this.red
+               && other.blue == this.blue
+               && other.gold == this.gold;
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return ("" + this.alpha + this.red + this.blue + this.gold).hashCode();
     }
 
     private static int checkValue(String color, int value) {
