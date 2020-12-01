@@ -7,10 +7,10 @@
 
     <groupId>tech.pod.game</groupId>
     <artifactId>multiboard</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>0.0.1-SNAPSHOT</version>
 
-    <name>SpaceIvdx</name>
-    <url>https://github.com/alexandre-cremieux/spaceIvdx</url>
+    <name>MultiBoard</name>
+    <url>https://github.com/alexandre-cremieux/multiboard</url>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
