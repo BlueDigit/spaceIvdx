@@ -58,17 +58,26 @@ class TDGridTest
         var materials = TDTestEntityGenerator
                 .generateMaterialsByTranslation(TDPosition.of(0, 0), TDPosition.of(5, 5), TDVector.of(1, 1), 10)
                 .stream()
+                .filter(grid::isInCollision)
                 .peek(grid::add)
                 .collect(Collectors.toList());
 
         Assertions.assertEquals(grid, grid.add(materials.get(0)));
+        materials.forEach(m -> Assertions.assertTrue(grid.contains(m)));
 
-        // 1. Check by position
+        // 1. Check that we can remove only part of the set
         var otherMaterials = grid.getFromCell(topLeft);
         Assertions.assertFalse(otherMaterials.isEmpty());
+
         otherMaterials.forEach(m -> Assertions.assertEquals(grid, grid.remove(m)));
         var noMoreOtherMaterials = grid.getFromCell(topLeft);
         Assertions.assertTrue(noMoreOtherMaterials.isEmpty());
+        var rest = grid.getFromCell(TDMaterial.class);
+        Assertions.assertEquals(materials.size() - otherMaterials.size(), rest.size());
+
+        // 2. Check that we can remove
+        materials.forEach(grid::remove);
+        materials.forEach(m -> Assertions.assertFalse(grid.contains(m)));
     }
 
     @Test

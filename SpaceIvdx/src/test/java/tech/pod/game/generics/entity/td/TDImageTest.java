@@ -1,7 +1,5 @@
 package tech.pod.game.generics.entity.td;
 
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -11,7 +9,7 @@ import tech.pod.game.generics.ui.graphics.TDImage;
 
 class TDImageTest
 {
-    private final Color blank = new RGBAColor("Blank", 0, 0, 0, 0);
+    private final Color blank = new RGBAColor(0, 0, 0, 0);
 
     /**
      * Define an image with it's background
@@ -22,15 +20,7 @@ class TDImageTest
      * @return A new TDImage
      */
     public static <C extends Color> TDImage<C> initImage(int width, int height, C backGround) {
-        return new TDImage<>(width, height, backGround)
-        {
-            @Override
-            public Stream<C> stream()
-            {
-                return IntStream.range(0, this.size)
-                                .mapToObj(this::getColor);
-            }
-        };
+        return new TDImage<>(width, height, backGround) {};
     }
 
     /**
@@ -38,7 +28,7 @@ class TDImageTest
      * @return A newly created color
      */
     public static Color generateColor() {
-        return new Color("Blue") {};
+        return new Color() {};
     }
 
     @Test
@@ -73,7 +63,7 @@ class TDImageTest
 
         Color color = generateColor();
         Assertions.assertEquals(image, image.setColor(10, 20, color));
-        Assertions.assertEquals(color, image.getColor(10, 20));
+        Assertions.assertEquals(color, image.getColor(10, 20).get());
 
         var idx = 20 * 1024 + 10;
         Assertions.assertEquals(color, image.getColor(idx));
@@ -89,6 +79,10 @@ class TDImageTest
     {
         // x = 10, y = 20
         Assertions.assertEquals(20 * 1024 + 10, TDImage.computeIndex(10, 20, 1024, 512));
+        Assertions.assertEquals(0, TDImage.computeIndex(0, 0, 1024, 512));
+        Assertions.assertEquals(1024, TDImage.computeIndex(0, 1, 1024, 512));
+        Assertions.assertEquals((1024 * 2) - 1, TDImage.computeIndex(1023, 1, 1024, 512));
+        Assertions.assertEquals(2048, TDImage.computeIndex(0, 2, 1024, 512));
         Assertions.assertThrows(IllegalArgumentException.class, () -> TDImage.computeIndex(10, 512, 1024, 512));
         Assertions.assertThrows(IllegalArgumentException.class, () -> TDImage.computeIndex(1024, 20, 1024, 512));
     }

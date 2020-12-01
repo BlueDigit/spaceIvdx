@@ -28,8 +28,8 @@ class TDGridControllerTest
 {
     private TDGrid grid;
     private ScreenMock<RGBAColor> screen;
-    private RGBAColor black = new RGBAColor("Black", 255, 0, 0, 0);
-    private RGBAColor yellow = new RGBAColor("Yellow", 255, 0, 255, 0);
+    private final RGBAColor black = new RGBAColor(255, 0, 0, 0);
+    private final RGBAColor yellow = new RGBAColor(255, 0, 255, 0);
     private TDImage<RGBAColor> blackBackGround;
 
     private static class ScreenMock<C extends Color> extends JFrameScreen<C> {
@@ -95,10 +95,10 @@ class TDGridControllerTest
         Action<GameController<TDPosition, RGBAColor, TDMaterial>> action = gController -> gController
                 .getGrid()
                 .translate(TDTestEntityGenerator.Enemy.class,
-                           enemy -> enemy.translate(TDVector.of(1, 1)));
+                           enemy -> TDVector.of(1, 1).apply(enemy));
 
         // Check that the controller does move materials and copy the sprite to the pixels image
-        int[] counter = new int[1];
+        final int[] counter = new int[1];
         final Map<TDMaterial, TDPosition> positionMap = new HashMap<>();
         for (int i = 0; i < 10; i++) {
             controller.addAction(action);
@@ -108,7 +108,9 @@ class TDGridControllerTest
                 m.get().streamPositions().forEach(p -> {
                     if (controller.getGrid().isInCollision(TDMaterial.of(p, p))) {
                         counter[0] += 1;
-                        Assertions.assertEquals(yellow, this.screen.image.getColor(p.x, p.y));
+                        var color = this.screen.image.getColor(p.x, p.y);
+                        Assertions.assertTrue(color.isPresent());
+                        Assertions.assertEquals(yellow, color.get());
                     }
                 });
                 if (positionMap.containsKey(m.get())) {
