@@ -20,8 +20,9 @@ import tech.pod.game.pixelboard.domain.spaceivdx.entity.Ship;
 import tech.pod.game.pixelboard.domain.spaceivdx.entity.SpaceIvdxEntityGenerator;
 import tech.pod.game.pixelboard.domain.spaceivdx.ui.UIFacade;
 
-public class SpaceIvdx extends GameEngine
+public class SpaceIvdx // extends GameEngine
 {
+    /*
     private static final String UI_CONFIGURATION = "screen_configuration";
     private static final String BACKGROUND = "background";
 
@@ -97,7 +98,7 @@ public class SpaceIvdx extends GameEngine
         this.getController().addAction(SpaceIvdxControllerFacade.enemiesMissileMoves);
 
         // Add state updaters
-        this.getController().addStateUpdater(SpaceIvdxControllerFacade.gameUpdater);
+        this.getController().addUpdateEvent(SpaceIvdxControllerFacade.gameUpdater);
     }
 
     public static void main(String[] args)
@@ -126,4 +127,5 @@ public class SpaceIvdx extends GameEngine
         // 3. Close the screen
         spaceIdx.close();
     }
+     */
 }

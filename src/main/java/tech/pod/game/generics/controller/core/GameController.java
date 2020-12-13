@@ -1,31 +1,92 @@
 package tech.pod.game.generics.controller.core;
 
+import java.util.concurrent.Flow;
+import java.util.concurrent.Flow.Publisher;
+import java.util.concurrent.Flow.Subscriber;
 import java.util.function.Consumer;
+
 import tech.pod.game.generics.entity.core.Grid;
 import tech.pod.game.generics.entity.core.Material;
 import tech.pod.game.generics.entity.core.Position;
-import tech.pod.game.generics.ui.graphics.Color;
-import tech.pod.game.generics.ui.graphics.GameScreen;
 
 /**
- * TODO: the controller should not hold states about upcoming instructions.
- * @param <P>
- * @param <C>
- * @param <E>
+ * Expose the control API of a game.
+ * <br><br>
+ * A game is basically composed by a board materialized by {@link Grid} by which the {@link Material} exists.
+ * The controller controls the events that are generated against the game and make sure that every actions
+ * proceed by the engine or a user are executed in a specific order to respect the grid's integrity.
+ * <br><br>
+ * In a normal use case the actions and event managed by the controller should be deleted after each execution
+ * that should be materialized by a call to the {@link GameController#executeActions()} method.
+ * <br><br>
+ *     TODO: The comment is not relevant
+ * A controller should be decoupled from the view, interacting directly with it's grid. Preferred implementation
+ * should make use of the {@link GameController#subscribe(Subscriber)},
+ * {@link GameController#addUpdateEvent(Consumer)} and {@link GameController#submitGrid()} methods to update the
+ * views connected to the game.
+ * <br><br>
+ * With this simple API the game controller should already do much:
+ * <ul>
+ *     <li>Manage grid integrity</li>
+ *     <li>Manage interaction between external events and the the game board</li>
+ *     <li>Publish events to IHM or other game monitoring tools</li>
+ * </ul>
+ * @param <G> The type of {@link Position} handled by the inner grid
+ * @param <E> The type of {@link Material} handled by the inner grid
  */
-public interface GameController<P extends Position, C extends Color, E extends Material<P, E>>
+public interface GameController<G extends Grid<?, ?>> extends Publisher<G>
 {
+    /**
+     * End the game.
+     */
     void end();
-    void restart();
-    boolean ended();
-    void userEnd();
-    boolean userEnded();
-    Grid<P, E> getGrid();
-    GameScreen<C> getScreen();
-    GameController<P, C, E> updateUI();
 
-    GameController<P, C, E> addStateUpdater(Consumer<GameController<P, C, E>> stateUpdate);
-    GameController<P, C, E> updateStates();
+    /**
+     * Restart the game.
+     */
+    void restart();
+
+    /**
+     * Check if the game is finished.
+     * @return True if game is done or false otherwise
+     */
+    boolean ended();
+
+    /**
+     * Signal to the {@link GameController} instance that the user has terminate the game.
+     */
+    void userEnd();
+
+    /**
+     * Determine if the game was ended by the user.
+     * @return True if so and false otherwise
+     */
+    boolean userEnded();
+
+    /**
+     * Return the inner grid.
+     * @return Should not be null
+     */
+    G getGrid();
+
+    /**
+     * Update all observers.
+     * @return this
+     */
+    GameController<G> submitGrid();
+
+    /**
+     * Add a state update event.
+     * @param stateUpdate Should not be null
+     * @return this
+     */
+    GameController<G> addUpdateEvent(Consumer<GameController<G>> stateUpdate);
+
+    /**
+     * Update all states.
+     * @return this
+     */
+    GameController<G> updateStates();
 
     /**
      * Add an action to the inner flow of actions.
@@ -33,7 +94,7 @@ public interface GameController<P extends Position, C extends Color, E extends M
      * @return this
      * @see GameController#executeActions()
      */
-    GameController<P, C, E> addAction(Action<GameController<P, C, E>> action);
+    GameController<G> addAction(Action<G> action);
 
     /**
      * Execute all the actions added to the execution queue.
@@ -45,14 +106,14 @@ public interface GameController<P extends Position, C extends Color, E extends M
      *
      * @return this
      */
-    GameController<P, C, E> executeActions();
+    GameController<G> executeActions();
 
     /**
      * Should execute an action asynchronously.
      * @param action should not be null
      * @return this
      */
-    GameController<P, C, E> executeAction(Action<GameController<P, C, E>> action);
+    GameController<G> executeAction(Action<G> action);
 
-    GameController<P, C, E> addUIUpdateAction(Action<GameController<P, C, E>> action);
+    GameController<G> addSubscriber(Flow.Subscriber<G> subscriber);
 }

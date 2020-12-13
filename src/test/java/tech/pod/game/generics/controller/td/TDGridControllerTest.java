@@ -2,15 +2,18 @@ package tech.pod.game.generics.controller.td;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Flow;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import tech.pod.game.generics.controller.core.Action;
-import tech.pod.game.generics.controller.core.GameController;
 import tech.pod.game.generics.entity.td.TDGrid;
 import tech.pod.game.generics.entity.td.TDMaterial;
 import tech.pod.game.generics.entity.td.TDPosition;
@@ -78,32 +81,63 @@ class TDGridControllerTest
     @DisplayName("Executing actions should move materials and update the screen")
     void executingActionsShouldWork()
     {
+        // setup test variables
+        final int[] counter = new int[1];
+        final AtomicBoolean stateCheck = new AtomicBoolean(false);
+
         // setup controller
-        final var controller = new TDGridController<RGBAColor>()
+        final var controller = new TDGridController()
                 .setGrid(this.grid)
-                .setScreen(this.screen, gController -> {
-                    TDImage<RGBAColor> image = TDImage.copy(this.blackBackGround);
-                    this.grid.stream().forEach(m -> m.get().streamPositions().forEach(p -> {
-                        if (gController.getGrid().isInCollision(TDMaterial.of(p, p))) {
-                            image.setColor(p.x, p.y, yellow);
-                        }
-                    }));
-                    return image;
+                .addSubscriber(new Flow.Subscriber<>() {
+                    private Flow.Subscription subscription;
+                    @Override
+                    public void onSubscribe(Flow.Subscription subscription) {
+                        this.subscription = subscription;
+                        subscription.request(1);
+                    }
+
+                    @Override
+                    public void onNext(TDGrid grid) {
+                        var newImage = grid
+                                .stream()
+                                .reduce(TDImage.copy(TDGridControllerTest.this.blackBackGround),
+                                        (image, material) -> {
+                                            material.get().streamPositions()
+                                                    .filter(p -> grid.isInCollision(TDMaterial.of(p, p)))
+                                                    .forEach(p -> image.setColor(p.x, p.y, yellow));
+                                            return image;
+                                        },
+                                        (lImage, rImage) -> lImage
+                                );
+                        TDGridControllerTest.this.screen.draw(newImage);
+                        stateCheck.set(true);
+                        subscription.request(1);
+                    }
+
+                    @Override
+                    public void onError(Throwable throwable) {
+                        throwable.printStackTrace();
+                    }
+
+                    @Override
+                    public void onComplete() {
+
+                    }
                 });
 
         // declare action
-        Action<GameController<TDPosition, RGBAColor, TDMaterial>> action = gController -> gController
-                .getGrid()
-                .translate(TDTestEntityGenerator.Enemy.class,
-                           enemy -> TDVector.of(1, 1).apply(enemy));
+        Action<TDGrid> action = grid -> grid.translate(
+                TDTestEntityGenerator.Enemy.class,
+                enemy -> TDVector.of(1, 1).apply(enemy)
+        );
 
         // Check that the controller does move materials and copy the sprite to the pixels image
-        final int[] counter = new int[1];
         final Map<TDMaterial, TDPosition> positionMap = new HashMap<>();
         for (int i = 0; i < 10; i++) {
             controller.addAction(action);
             controller.executeActions();
-            controller.updateUI();
+            controller.submitGrid();
+            Awaitility.await().atMost(10, TimeUnit.SECONDS).until(stateCheck::get);
             controller.getGrid().stream().forEach(m -> {
                 m.get().streamPositions().forEach(p -> {
                     if (controller.getGrid().isInCollision(TDMaterial.of(p, p))) {
@@ -118,7 +152,9 @@ class TDGridControllerTest
                 }
                 positionMap.put(m.get(), m.get().getUpperLeft());
             });
+            stateCheck.set(false);
         }
+
         Assertions.assertTrue(counter[0] > 0);
         Assertions.assertFalse(positionMap.isEmpty());
     }

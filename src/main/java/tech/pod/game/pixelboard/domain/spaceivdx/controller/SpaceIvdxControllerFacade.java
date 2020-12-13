@@ -7,10 +7,7 @@ import java.util.stream.Collectors;
 import tech.pod.game.generics.controller.core.Action;
 import tech.pod.game.generics.controller.core.GameController;
 import tech.pod.game.generics.entity.td.TDGrid;
-import tech.pod.game.generics.entity.td.TDMaterial;
 import tech.pod.game.generics.entity.td.TDMoves;
-import tech.pod.game.generics.entity.td.TDPosition;
-import tech.pod.game.generics.ui.graphics.RGBAColor;
 import tech.pod.game.pixelboard.domain.spaceivdx.entity.Enemy;
 import tech.pod.game.pixelboard.domain.spaceivdx.entity.Ship;
 
@@ -23,11 +20,11 @@ public class SpaceIvdxControllerFacade
     public static final int ENEMY_MOVE_FACTOR = 10;
     public static final int ENEMY_SHOT_FACTOR = 10;
 
-    public static final Action<GameController<TDPosition, RGBAColor, TDMaterial>> enemiesMoves = moveEnemies();
-    public static final Action<GameController<TDPosition, RGBAColor, TDMaterial>> enemiesShots = makeEnemiesShoot();
-    public static final Action<GameController<TDPosition, RGBAColor, TDMaterial>> enemiesMissileMoves = moveEnemiesMissile();
-    public static final Action<GameController<TDPosition, RGBAColor, TDMaterial>> shipMissileMoves = moveShipMissile();
-    public static final Consumer<GameController<TDPosition, RGBAColor, TDMaterial>> gameUpdater = stateUpdater();
+    public static final Action<TDGrid> enemiesMoves = moveEnemies();
+    public static final Action<TDGrid> enemiesShots = makeEnemiesShoot();
+    public static final Action<TDGrid> enemiesMissileMoves = moveEnemiesMissile();
+    public static final Action<TDGrid> shipMissileMoves = moveShipMissile();
+    public static final Consumer<GameController<TDGrid>> gameUpdater = stateUpdater();
 
     /**
      * Make this class static.
@@ -45,9 +42,8 @@ public class SpaceIvdxControllerFacade
      *
      * @return An instance of {@link Action} to apply on the controller game.
      */
-    public static Action<GameController<TDPosition, RGBAColor, TDMaterial>> moveEnemies() {
-        return controller -> {
-            var grid = (TDGrid) controller.getGrid();
+    public static Action<TDGrid> moveEnemies() {
+        return grid ->
             grid.getFromCell(Enemy.class)
                 .stream()
                 .map(enemy -> {
@@ -67,49 +63,43 @@ public class SpaceIvdxControllerFacade
                 .filter(TDMoves.DOWN::equals)
                 .findFirst()
                 .or(() -> Optional.of(enemyLastMove))
-                .ifPresent(move -> controller.getGrid().translate(Enemy.class, move.computeVector(ENEMY_MOVE_FACTOR)));
-        };
+                .ifPresent(move -> grid.translate(Enemy.class, move.computeVector(ENEMY_MOVE_FACTOR)));
     }
 
-    public static Action<GameController<TDPosition, RGBAColor, TDMaterial>> makeEnemiesShoot() {
-        return controller -> {
+    public static Action<TDGrid> makeEnemiesShoot() {
+        return grid -> {
             if (enemyShotCounter == 0) {
                 enemyShotCounter = 8;
-                var grid = (TDGrid) controller.getGrid();
                 var enemies = grid.getFromCell(Enemy.class);
-                enemies
-                        .stream()
-                        .reduce((l, r) -> l.getUpperLeft().y > r.getUpperLeft().y ? l : r)
-                        .map(Enemy::getLowerRight)
-                        .map(lower -> {
-                            var shooters = enemies
-                                    .stream()
-                                    .filter(e -> e.getLowerRight().y == lower.y)
-                                    .collect(Collectors.toList());
-                            return shooters.get(new Random().nextInt(shooters.size()));
-                        })
-                        .ifPresent(shooter -> grid.add(shooter.shoot()));
+                enemies.stream()
+                       .reduce((l, r) -> l.getUpperLeft().y > r.getUpperLeft().y ? l : r)
+                       .map(Enemy::getLowerRight)
+                       .map(lower -> {
+                           var shooters = enemies
+                                   .stream()
+                                   .filter(e -> e.getLowerRight().y == lower.y)
+                                   .collect(Collectors.toList());
+                           return shooters.get(new Random().nextInt(shooters.size()));
+                       })
+                       .ifPresent(shooter -> grid.add(shooter.shoot()));
             }
             --enemyShotCounter;
         };
     }
 
-    public static Action<GameController<TDPosition, RGBAColor, TDMaterial>> moveEnemiesMissile() {
-        return controller -> controller
-                .getGrid()
+    public static Action<TDGrid> moveEnemiesMissile() {
+        return grid -> grid
                 .translate(Enemy.EnemyMissile.class,
                            TDMoves.DOWN.computeVector(SpaceIvdxControllerFacade.ENEMY_SHOT_FACTOR));
     }
 
-    public static Action<GameController<TDPosition, RGBAColor, TDMaterial>> moveShipMissile() {
-        return controller -> controller
-                .getGrid()
-                .translate(Ship.ShipMissile.class, TDMoves.UP.computeVector(20));
+    public static Action<TDGrid> moveShipMissile() {
+        return grid -> grid.translate(Ship.ShipMissile.class, TDMoves.UP.computeVector(20));
     }
 
-    public static Consumer<GameController<TDPosition, RGBAColor, TDMaterial>> stateUpdater() {
+    public static Consumer<GameController<TDGrid>> stateUpdater() {
         return controller -> {
-            var grid = (TDGrid) controller.getGrid();
+            var grid = controller.getGrid();
             grid.getFromCell(Ship.ShipMissile.class)
                 .stream()
                 .flatMap(shipMissile -> shipMissile

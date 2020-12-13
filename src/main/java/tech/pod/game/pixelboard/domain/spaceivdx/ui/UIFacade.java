@@ -2,10 +2,6 @@ package tech.pod.game.pixelboard.domain.spaceivdx.ui;
 
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
-import java.io.FileInputStream;
-import java.io.InputStreamReader;
-import java.net.URI;
-import java.net.URL;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -88,7 +84,7 @@ public class UIFacade
         return new TDRGBAImage(5, 10, RGBADefinedColors.MID_YELLOW.color(), false);
     }
 
-    public static Function<TDGridController<RGBAColor>, GameImage<RGBAColor>> rgbaScreenConverter(
+    public static Function<TDGridController, GameImage<RGBAColor>> rgbaScreenConverter(
             TDImage<RGBAColor> backGround,
             Map<Class<? extends TDMaterial>, Function<TDMaterial, TDImage<RGBAColor>>> images)
     {
@@ -125,8 +121,8 @@ public class UIFacade
                 while (true) {
                     synchronized (this.lock) {
                         vector.ifPresent(
-                                action -> controller.executeAction(
-                                        control -> control.getGrid().translate(Ship.class, action)));
+                                action -> controller.executeAction(grid -> grid.translate(Ship.class, action))
+                        );
                     }
                     long duration = (new Date().getTime()) - start;
                     if (duration < 25) {
@@ -192,7 +188,7 @@ public class UIFacade
                 }
                 return tdMaterial;
             };
-            this.controller.executeAction(control -> control.getGrid().translate(Ship.class, action));
+            this.controller.executeAction(grid -> grid.translate(Ship.class, action));
             return this.vector;
         }
     }

@@ -10,10 +10,10 @@ import tech.pod.game.generics.controller.core.GameController;
  */
 public abstract class GameEngine
 {
-    protected final GameController<?, ?, ?> controller;
+    protected final GameController<?> controller;
     protected EngineConfiguration configuration;
 
-    public GameEngine(EngineConfiguration configuration, GameController<?, ?, ?> controller) {
+    public GameEngine(EngineConfiguration configuration, GameController<?> controller) {
         this.configuration = Objects.requireNonNull(configuration, "GameEngine: configuration");
         this.controller = Objects.requireNonNull(controller, "GameEngine: null controller");
         this.init();
@@ -26,7 +26,7 @@ public abstract class GameEngine
             this.controller
                     .executeActions()
                     .updateStates()
-                    .updateUI();
+                    .submitGrid();
             try {
                 var duration = new Date().getTime() - timeStamp;
                 if (duration < 140) {

@@ -3,45 +3,38 @@ package tech.pod.game.generics.controller.td;
 import java.util.LinkedList;
 import java.util.Objects;
 import java.util.Queue;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Flow;
+import java.util.concurrent.SubmissionPublisher;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import tech.pod.game.generics.controller.core.Action;
 import tech.pod.game.generics.controller.core.GameController;
-import tech.pod.game.generics.entity.core.Grid;
-import tech.pod.game.generics.entity.td.TDMaterial;
-import tech.pod.game.generics.entity.td.TDPosition;
-import tech.pod.game.generics.ui.graphics.Color;
-import tech.pod.game.generics.ui.graphics.GameImage;
-import tech.pod.game.generics.ui.graphics.GameScreen;
+import tech.pod.game.generics.entity.td.TDGrid;
 
-public class TDGridController<C extends Color> implements GameController<TDPosition, C, TDMaterial>
+public class TDGridController extends SubmissionPublisher<TDGrid> implements GameController<TDGrid>
 {
     private boolean end = false;
     private boolean userEnd = false;
-    private Grid<TDPosition, TDMaterial> grid;
-    private GameScreen<C> screen;
-    private Function<TDGridController<C>, GameImage<C>> screenConverter;
+    private TDGrid grid;
 
-    private final Queue<Action<GameController<TDPosition, C, TDMaterial>>> actions = new LinkedList<>();
-    private final Queue<Consumer<GameController<TDPosition, C, TDMaterial>>> stateUpdaters = new LinkedList<>();
+    private final Queue<Action<TDGrid>> actions = new LinkedList<>();
+    private final Queue<Consumer<GameController<TDGrid>>> stateUpdaters = new LinkedList<>();
 
-    public TDGridController<C> setGrid(Grid<TDPosition, TDMaterial> grid) {
-        this.grid = Objects.requireNonNull(grid, "TDGridController: null grid");
-        return this;
+    public TDGridController()
+    {
+        super(Executors.newSingleThreadExecutor(), 1);
     }
 
-    public TDGridController<C> setScreen(
-            GameScreen<C> screen,
-            Function<TDGridController<C>, GameImage<C>> screenConverter)
+    public TDGridController setGrid(TDGrid grid)
     {
-        this.screen = Objects.requireNonNull(screen, "TDGridController: null screen");
-        this.screenConverter = screenConverter;
+        this.grid = Objects.requireNonNull(grid, "TDGridController: null grid");
         return this;
     }
 
     @Override
     public void end()
     {
+        super.close();
         this.end = true;
     }
 
@@ -60,7 +53,7 @@ public class TDGridController<C extends Color> implements GameController<TDPosit
     @Override
     public void userEnd()
     {
-        this.end = true;
+        this.end();
         this.userEnd = true;
     }
 
@@ -71,27 +64,36 @@ public class TDGridController<C extends Color> implements GameController<TDPosit
     }
 
     @Override
-    public Grid<TDPosition, TDMaterial> getGrid()
+    public TDGrid getGrid()
     {
         return this.grid;
     }
 
     @Override
-    public GameScreen<C> getScreen()
+    public TDGridController addSubscriber(Flow.Subscriber<TDGrid> subscriber)
     {
-        return this.screen;
-    }
-
-    @Override
-    public synchronized TDGridController<C> updateUI()
-    {
-        final var image = this.screenConverter.apply(this);
-        this.screen.draw(image);
+        super.subscribe(subscriber);
         return this;
     }
 
     @Override
-    public TDGridController<C> updateStates()
+    public GameController<TDGrid> submitGrid()
+    {
+        var gridCopy = this.grid.spawn();
+        this.submit(gridCopy);
+        return this;
+    }
+
+    @Override
+    public TDGridController addUpdateEvent(Consumer<GameController<TDGrid>> stateUpdater)
+    {
+        Objects.requireNonNull(stateUpdater, "TDGridController: null state updater");
+        this.stateUpdaters.add(stateUpdater);
+        return this;
+    }
+
+    @Override
+    public TDGridController updateStates()
     {
         while (!this.stateUpdaters.isEmpty()) {
             this.stateUpdaters.poll().accept(this);
@@ -100,38 +102,25 @@ public class TDGridController<C extends Color> implements GameController<TDPosit
     }
 
     @Override
-    public TDGridController<C> executeActions()
-    {
-        while (!this.actions.isEmpty()) {
-            this.actions.poll().apply(this);
-        }
-        return this;
-    }
-
-    @Override
-    public TDGridController<C> addAction(Action<GameController<TDPosition, C, TDMaterial>> action)
+    public TDGridController addAction(Action<TDGrid> action)
     {
         this.actions.add(action);
         return this;
     }
 
     @Override
-    public synchronized TDGridController<C> executeAction(Action<GameController<TDPosition, C, TDMaterial>> action)
+    public TDGridController executeActions()
     {
-        Objects.requireNonNull(action, "TDGridController: null action").apply(this);
+        while (!this.actions.isEmpty()) {
+            this.actions.poll().apply(this.grid);
+        }
         return this;
     }
 
     @Override
-    public TDGridController<C> addStateUpdater(Consumer<GameController<TDPosition, C, TDMaterial>> stateUpdater)
+    public synchronized TDGridController executeAction(Action<TDGrid> action)
     {
-        this.stateUpdaters.add(stateUpdater);
+        Objects.requireNonNull(action, "TDGridController: null action").apply(this.grid);
         return this;
-    }
-
-    @Override
-    public TDGridController<C> addUIUpdateAction(Action<GameController<TDPosition, C, TDMaterial>> action)
-    {
-        throw new UnsupportedOperationException("Add update ui action is not supported");
     }
 }
