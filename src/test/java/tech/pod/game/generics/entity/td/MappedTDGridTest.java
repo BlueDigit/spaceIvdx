@@ -8,7 +8,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import tech.pod.game.generics.entity.core.Material;
 
-class TDGridTest
+class MappedTDGridTest
 {
     private static class Ship extends TDMaterial {
         public Ship() {
@@ -22,7 +22,7 @@ class TDGridTest
     {
         var topLeft = TDPosition.of(0, 5);
         // 0. Init
-        var grid = TDGrid.of(10, 5, 10, 5);
+        var grid = MappedTDGrid.of(10, 5, 10, 5);
         var materials = TDTestEntityGenerator
                 .generateMaterialsByTranslation(TDPosition.of(0, 0), TDPosition.of(5, 5), TDVector.of(1, 1), 10)
                 .stream()
@@ -54,7 +54,7 @@ class TDGridTest
     void remove() {
         var topLeft = TDPosition.of(0, 5);
         // 0. Init
-        var grid = TDGrid.of(10, 5, 10, 5);
+        var grid = MappedTDGrid.of(10, 5, 10, 5);
         var materials = TDTestEntityGenerator
                 .generateMaterialsByTranslation(TDPosition.of(0, 0), TDPosition.of(5, 5), TDVector.of(1, 1), 10)
                 .stream()
@@ -83,7 +83,7 @@ class TDGridTest
     @Test
     void contains() {
         // 0. Init
-        var grid = TDGrid.of(10, 2, 10, 2);
+        var grid = MappedTDGrid.of(10, 2, 10, 2);
         var materials = TDTestEntityGenerator
                 .generateMaterialsByTranslation(TDPosition.of(0, 0), TDPosition.of(5, 5), TDVector.of(1, 1), 10)
                 .stream()
@@ -98,7 +98,7 @@ class TDGridTest
     @DisplayName("Getting element at one position should work")
     void gettingAnElementAtPositionShouldWork() {
         // 0. Init
-        var grid = TDGrid.of(10, 2, 10, 2);
+        var grid = MappedTDGrid.of(10, 2, 10, 2);
         List<TDMaterial> materials = TDTestEntityGenerator
                 .generateMaterialsByTranslation(TDPosition.of(0, 0), TDPosition.of(5, 5), TDVector.of(1, 1), 10)
                 .stream()
@@ -125,7 +125,7 @@ class TDGridTest
     @Test
     void translateTest() {
         // 0. Init
-        var grid = TDGrid.of(10, 2, 10, 2);
+        var grid = MappedTDGrid.of(10, 2, 10, 2);
         var materialsPosition = TDTestEntityGenerator
                 .generateMaterialsByTranslation(TDPosition.of(0, 0), TDPosition.of(5, 5), TDVector.of(1, 1), 10)
                 .stream()
@@ -151,7 +151,7 @@ class TDGridTest
     {
         // 0. Init
         int numbedOfMaterials = 10;
-        var grid = TDGrid.of(10, 2, 10, 2);
+        var grid = MappedTDGrid.of(10, 2, 10, 2);
         TDTestEntityGenerator
                 .generateMaterialsByTranslation(
                         TDPosition.of(0, 0),
@@ -179,7 +179,7 @@ class TDGridTest
     {
         // 0. Init
         int numbedOfMaterials = 10;
-        var grid = TDGrid.of(10, 2, 10, 2);
+        var grid = MappedTDGrid.of(10, 2, 10, 2);
         TDTestEntityGenerator
                 .generateMaterialsByTranslation(
                         TDPosition.of(0, 0),
@@ -206,7 +206,7 @@ class TDGridTest
     void isInCollision()
     {
         // 0. Init
-        var grid = TDGrid.of(10, 5, 10, 5);
+        var grid = MappedTDGrid.of(10, 5, 10, 5);
 
         // 1. Test that the grid is in collision with itself
         Assertions.assertTrue(grid.isInCollision(grid));
@@ -216,7 +216,7 @@ class TDGridTest
     void testTranslateByClassShouldWork()
     {
         // 0. Init
-        var grid = TDGrid.of(10, 2, 10, 2);
+        var grid = MappedTDGrid.of(10, 2, 10, 2);
         TDTestEntityGenerator
                 .generateMaterialsByTranslation(TDPosition.of(0, 0), TDPosition.of(5, 5), TDVector.of(1, 1), 10)
                 .forEach(grid::add);
@@ -243,7 +243,7 @@ class TDGridTest
     void spawn()
     {
         // 0. Init
-        var grid = TDGrid.of(10, 2, 10, 2);
+        var grid = MappedTDGrid.of(10, 2, 10, 2);
         var materials = TDTestEntityGenerator
                 .generateMaterialsByTranslation(TDPosition.of(0, 0), TDPosition.of(5, 5), TDVector.of(1, 1), 10)
                 .stream()

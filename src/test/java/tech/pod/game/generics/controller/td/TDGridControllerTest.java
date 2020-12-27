@@ -14,6 +14,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import tech.pod.game.generics.controller.core.Action;
+import tech.pod.game.generics.entity.td.MappedTDGrid;
 import tech.pod.game.generics.entity.td.TDGrid;
 import tech.pod.game.generics.entity.td.TDMaterial;
 import tech.pod.game.generics.entity.td.TDPosition;
@@ -41,7 +42,8 @@ class TDGridControllerTest
         public ScreenMock(
                 UIConfiguration configuration,
                 ColorConverter<C, Integer> colorConverter,
-                GameImage<C> backGround) {
+                GameImage<C> backGround
+        ){
             super(configuration, colorConverter, backGround);
         }
 
@@ -57,8 +59,7 @@ class TDGridControllerTest
 
     @BeforeEach
     void init() {
-        this.grid = TDGrid.of(100, 5, 100, 5);
-        //TODO: TDMaterial<E extends TDMaterial<E>> implements Material<TDPosition, TDMaterial<E>>
+        this.grid = MappedTDGrid.of(100, 5, 100, 5);
         Supplier<TDMaterial> enemyGenerator = () -> new TDTestEntityGenerator.Enemy()
                 .setUpperLeft(TDPosition.of(0, 0))
                 .setLowerRight(TDPosition.of(10, 10));
@@ -131,12 +132,14 @@ class TDGridControllerTest
                 enemy -> TDVector.of(1, 1).apply(enemy)
         );
 
+        // Emulate a game loop
         // Check that the controller does move materials and copy the sprite to the pixels image
         final Map<TDMaterial, TDPosition> positionMap = new HashMap<>();
         for (int i = 0; i < 10; i++) {
             controller.addAction(action);
             controller.executeActions();
             controller.submitGrid();
+            // We wait until the message containing the grid is consumed by the subscriber
             Awaitility.await().atMost(10, TimeUnit.SECONDS).until(stateCheck::get);
             controller.getGrid().stream().forEach(m -> {
                 m.get().streamPositions().forEach(p -> {

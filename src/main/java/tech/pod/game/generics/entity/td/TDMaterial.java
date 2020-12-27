@@ -87,7 +87,7 @@ public class TDMaterial implements Material<TDPosition, TDMaterial>
     }
 
     @Override
-    public synchronized TDMaterial translate(Vector<TDPosition, TDMaterial> vector)
+    public TDMaterial translate(Vector<TDPosition, TDMaterial> vector)
     {
         return vector.apply(this);
     }

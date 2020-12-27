@@ -17,6 +17,7 @@ public class TDGridController extends SubmissionPublisher<TDGrid> implements Gam
     private boolean userEnd = false;
     private TDGrid grid;
 
+    private final Object lock = new Object();
     private final Queue<Action<TDGrid>> actions = new LinkedList<>();
     private final Queue<Consumer<GameController<TDGrid>>> stateUpdaters = new LinkedList<>();
 
@@ -34,7 +35,6 @@ public class TDGridController extends SubmissionPublisher<TDGrid> implements Gam
     @Override
     public void end()
     {
-        super.close();
         this.end = true;
     }
 
@@ -53,6 +53,7 @@ public class TDGridController extends SubmissionPublisher<TDGrid> implements Gam
     @Override
     public void userEnd()
     {
+        super.close();
         this.end();
         this.userEnd = true;
     }
@@ -79,8 +80,13 @@ public class TDGridController extends SubmissionPublisher<TDGrid> implements Gam
     @Override
     public GameController<TDGrid> submitGrid()
     {
-        var gridCopy = this.grid.spawn();
-        this.submit(gridCopy);
+        if (!this.isClosed()) {
+            TDGrid gridCopy;
+            synchronized (this.lock) {
+                gridCopy = this.grid.spawn();
+            }
+            this.submit(gridCopy);
+        }
         return this;
     }
 
@@ -120,7 +126,9 @@ public class TDGridController extends SubmissionPublisher<TDGrid> implements Gam
     @Override
     public synchronized TDGridController executeAction(Action<TDGrid> action)
     {
-        Objects.requireNonNull(action, "TDGridController: null action").apply(this.grid);
+        synchronized (this.lock) {
+            Objects.requireNonNull(action, "TDGridController: null action").apply(this.grid);
+        }
         return this;
     }
 }
