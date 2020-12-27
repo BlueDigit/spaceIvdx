@@ -6,6 +6,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.TreeSet;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import tech.pod.game.generics.entity.core.Material;
 import tech.pod.game.generics.entity.core.Vector;
@@ -74,16 +75,27 @@ public class ReadTDGrid implements TDGrid
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * Stream the inner materials and filter those that are in collision with the defined position.
+     * @param position should not be null
+     * @return A new list of materials in collision with the given position
+     */
     @Override
     public List<Material<TDPosition, TDMaterial>> get(TDPosition position)
     {
-        throw new UnsupportedOperationException();
+        var posArea = TDMaterial.of(position, position);
+        return this.materials.stream().filter(posArea::isInCollision).collect(Collectors.toList());
     }
 
+    /**
+     * Just embed the output of {@link ReadTDGrid#get(TDPosition)} in a TreeSet.
+     * @param position Should not be null
+     * @return A new instance of TreeSet
+     */
     @Override
     public TreeSet<Material<TDPosition, TDMaterial>> getFromCell(TDPosition position)
     {
-        throw new UnsupportedOperationException();
+        return new TreeSet<>(this.get(position));
     }
 
     @Override
