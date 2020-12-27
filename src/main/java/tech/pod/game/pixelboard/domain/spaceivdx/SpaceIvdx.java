@@ -1,12 +1,19 @@
 package tech.pod.game.pixelboard.domain.spaceivdx;
 
 
+import java.util.Date;
+import java.util.Map;
+import java.util.concurrent.Flow;
+import java.util.function.Function;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import tech.pod.game.generics.engine.EngineConfiguration;
 import tech.pod.game.generics.engine.GameEngine;
+import tech.pod.game.generics.entity.td.MappedTDGrid;
 import tech.pod.game.generics.entity.td.TDGrid;
+import tech.pod.game.generics.entity.td.TDMaterial;
 import tech.pod.game.generics.entity.td.TDPosition;
+import tech.pod.game.generics.ui.graphics.GameImage;
 import tech.pod.game.generics.ui.graphics.JFrameScreen;
 import tech.pod.game.generics.ui.graphics.RGBAColor;
 import tech.pod.game.generics.ui.graphics.RGBADefinedColors;
@@ -20,47 +27,93 @@ import tech.pod.game.pixelboard.domain.spaceivdx.entity.Ship;
 import tech.pod.game.pixelboard.domain.spaceivdx.entity.SpaceIvdxEntityGenerator;
 import tech.pod.game.pixelboard.domain.spaceivdx.ui.UIFacade;
 
-public class SpaceIvdx // extends GameEngine
+/**
+ * Embed the SpaceIvx game logic.
+ */
+public class SpaceIvdx extends GameEngine
 {
-    /*
     private static final String UI_CONFIGURATION = "screen_configuration";
     private static final String BACKGROUND = "background";
 
+    private final Map<Class<? extends TDMaterial>, Function<TDMaterial, TDImage<RGBAColor>>> images;
+    private final JFrameScreen<RGBAColor> screen;
+    private final Function<TDGrid, GameImage<RGBAColor>> screenConverter;
+
     public SpaceIvdx(EngineConfiguration configuration) {
         super(configuration, new SpaceIvdxController());
+        this.images = UIFacade.spaceIvdxImages();
+        this.screenConverter = UIFacade.rgbaScreenConverter(this.configuration.get(BACKGROUND), images);
+        this.screen = new JFrameScreen<>(
+                this.configuration.get(UI_CONFIGURATION),
+                RGBAColor::toPixel,
+                this.configuration.get(BACKGROUND)
+        );
+        this.screen.addKeyListener(new UIFacade.SpaceIdvxKeyListener(this.getController()));
+        this.configureController();
+    }
+
+    private void configureController() {
+        this.getController().addSubscriber(new Flow.Subscriber<>() {
+            private Flow.Subscription subscription;
+            private long timeStamp = new Date().getTime();
+
+            @Override
+            public void onSubscribe(Flow.Subscription subscription)
+            {
+                this.subscription = subscription;
+                this.subscription.request(1);
+            }
+
+            @Override
+            public void onNext(TDGrid item)
+            {
+                try {
+                    var duration = new Date().getTime() - this.timeStamp;
+                    if (duration < 50) {
+                        Thread.sleep(50 - duration);
+                    }
+                    this.timeStamp = new Date().getTime();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                SpaceIvdx.this.screen.draw(SpaceIvdx.this.screenConverter.apply(item));
+                this.subscription.request(1);
+            }
+
+            @Override
+            public void onError(Throwable throwable)
+            {
+                throwable.printStackTrace();
+            }
+
+            @Override
+            public void onComplete()
+            {
+                // Nothing to do
+            }
+        });
     }
 
     private SpaceIvdxController getController() {
         return (SpaceIvdxController)this.controller;
     }
 
+    /**
+     * Init the grid and its the materials.
+     */
     @Override
     public void init()
     {
-        // 0. Init images
-        var images = UIFacade.spaceIvdxImages();
+        // 0. Create the grid
+        var grid = MappedTDGrid.of(800, 20, 1280, 20);
 
-        // 1. Init the screen
-        if (this.getController().getScreen() == null) {
-            var screen = new JFrameScreen<>(
-                    this.configuration.get(UI_CONFIGURATION),
-                    RGBAColor::toPixel,
-                    this.configuration.get(BACKGROUND)
-            );
-            var screenConverter = UIFacade.rgbaScreenConverter(this.configuration.get(BACKGROUND), images);
-            this.getController().setScreen(screen, screenConverter);
-
-            // 2. Add the listener for user events
-            screen.addKeyListener(new UIFacade.SpaceIdvxKeyListener(this.getController()));
-        }
-
-        // 3. Add the materials
-        var grid = TDGrid.of(800, 20, 1280, 20);
-
+        // 1. Add the ship
         var shipImage = images.get(Ship.class).apply(null);
         var ship = SpaceIvdxEntityGenerator
                 .generateShip(shipImage.width, shipImage.height, Missile.WIDTH, Missile.HEIGHT, 1280, 800);
+        grid.add(ship);
 
+        // 2. Add the enemies
         var enemyImage = images.get(Enemy.class).apply(null);
         var enemyStartPosition = TDPosition.of(10, 10);
         SpaceIvdxEntityGenerator
@@ -69,7 +122,6 @@ public class SpaceIvdx // extends GameEngine
                 )
                 .forEach(grid::add);
 
-        grid.add(ship);
         this.getController().setGrid(grid);
     }
 
@@ -85,7 +137,7 @@ public class SpaceIvdx // extends GameEngine
 
     public void close()
     {
-        this.getController().getScreen().close();
+        this.screen.close();
     }
 
     @Override
@@ -127,5 +179,4 @@ public class SpaceIvdx // extends GameEngine
         // 3. Close the screen
         spaceIdx.close();
     }
-     */
 }

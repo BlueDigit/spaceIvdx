@@ -9,8 +9,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import tech.pod.game.generics.controller.td.TDGridController;
 import tech.pod.game.generics.entity.core.Vector;
+import tech.pod.game.generics.entity.td.TDGrid;
 import tech.pod.game.generics.entity.td.TDMaterial;
 import tech.pod.game.generics.entity.td.TDMoves;
 import tech.pod.game.generics.entity.td.TDPosition;
@@ -84,19 +84,19 @@ public class UIFacade
         return new TDRGBAImage(5, 10, RGBADefinedColors.MID_YELLOW.color(), false);
     }
 
-    public static Function<TDGridController, GameImage<RGBAColor>> rgbaScreenConverter(
+    public static Function<TDGrid, GameImage<RGBAColor>> rgbaScreenConverter(
             TDImage<RGBAColor> backGround,
             Map<Class<? extends TDMaterial>, Function<TDMaterial, TDImage<RGBAColor>>> images)
     {
-        return gController -> {
+        return grid -> {
             TDImage<RGBAColor> outputImage = TDImage.copy(backGround);
-            gController.getGrid().stream().forEach(material -> {
-                var objectImage = images.get(material.getClass()).apply(material.get());
+            grid.stream().forEach(material -> {
+                var materialImage = images.get(material.getClass()).apply(material.get());
                 material.get().streamPositions().forEach(tdPosition -> {
-                    if (gController.getGrid().isInCollision(TDMaterial.of(tdPosition, tdPosition))) {
+                    if (grid.isInCollision(TDMaterial.of(tdPosition, tdPosition))) {
                         int x = tdPosition.x - material.get().getUpperLeft().x;
                         int y = tdPosition.y - material.get().getUpperLeft().y;
-                        objectImage
+                        materialImage
                                 .getColor(x, y)
                                 .filter(color -> !RGBADefinedColors.BLANK.color().equals(color))
                                 .ifPresent(color -> outputImage.setColor(tdPosition.x, tdPosition.y, color));

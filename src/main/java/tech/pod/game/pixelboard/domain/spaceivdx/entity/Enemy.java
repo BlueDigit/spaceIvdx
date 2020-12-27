@@ -14,7 +14,7 @@ import tech.pod.game.generics.entity.td.TDPosition;
 
 public class Enemy extends TDMaterial implements Shooter<Missile>, Movable<TDPosition, TDMaterial>, Ordered
 {
-    private final static AtomicReference<Integer> counter = new AtomicReference<>(0);
+    private static final AtomicReference<Integer> counter = new AtomicReference<>(0);
 
     /** The enemy's laser */
     private final Function<Enemy, Shooter<EnemyMissile>> laser;
@@ -78,6 +78,7 @@ public class Enemy extends TDMaterial implements Shooter<Missile>, Movable<TDPos
         var copy = Enemy.of(this.upperLeft, this.lowerRight, this.laser);
         copy.moveDelay = new AtomicReference<>(this.moveDelay.get());
         copy.moveCounter = new AtomicReference<>(this.moveCounter.get());
+        copy.ordinal = this.ordinal;
         return copy;
     }
 

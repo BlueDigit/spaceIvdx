@@ -20,6 +20,7 @@ public class SpaceIvdxControllerFacade
     public static final int ENEMY_MOVE_FACTOR = 10;
     public static final int ENEMY_SHOT_FACTOR = 10;
 
+    // TODO: Add those in the game context: instantiated one time only.
     public static final Action<TDGrid> enemiesMoves = moveEnemies();
     public static final Action<TDGrid> enemiesShots = makeEnemiesShoot();
     public static final Action<TDGrid> enemiesMissileMoves = moveEnemiesMissile();
@@ -47,11 +48,17 @@ public class SpaceIvdxControllerFacade
             grid.getFromCell(Enemy.class)
                 .stream()
                 .map(enemy -> {
-                    if (enemyLastMove.equals(TDMoves.RIGHT) && enemy.getLowerRight().x < grid.width - grid.cellWidth) {
+                    if (enemyLastMove.equals(TDMoves.RIGHT)
+                        && enemy.getLowerRight().x < grid.getWidth() - grid.getCellWidth()
+                    ) {
                         return TDMoves.RIGHT;
-                    } else if (enemyLastMove.equals(TDMoves.LEFT) && enemy.getUpperLeft().x > grid.cellWidth) {
+                    }
+                    else if (enemyLastMove.equals(TDMoves.LEFT) && enemy.getUpperLeft().x > grid.getCellWidth())
+                    {
                         return TDMoves.LEFT;
-                    } else {
+                    }
+                    else
+                    {
                         enemyLastMove = switch (enemyLastMove) {
                             case LEFT -> TDMoves.RIGHT;
                             case RIGHT -> TDMoves.LEFT;
