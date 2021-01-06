@@ -25,7 +25,7 @@ mvn clean package
 From the root project directory
 ```bash
 cd target
-java -jar --enable-preview multiboard-1.0-SNAPSHOT.jar
+java -jar --enable-preview multiboard-0.0.1-SNAPSHOT.jar
 ```
 
 ## Playing the game
